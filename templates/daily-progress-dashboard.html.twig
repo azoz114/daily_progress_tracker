@@ -1,0 +1,19 @@
+<div class="daily-progress-dashboard">
+  {% if tasks %}
+    <div class="task-list">
+      {% for task in tasks %}
+        <div class="task-item">
+          <h3>{{ task.title }}</h3>
+          <div class="task-progress">
+            {{ task.progress }}%
+          </div>
+          <div class="task-dates">
+            {{ task.start_date|date('Y-m-d') }} - {{ task.end_date|date('Y-m-d') }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>{{ 'No tasks found.'|t }}</p>
+  {% endif %}
+</div>

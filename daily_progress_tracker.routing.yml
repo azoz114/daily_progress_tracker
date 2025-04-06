@@ -1,0 +1,42 @@
+daily_progress_tracker.task_list:
+  path: '/admin/content/daily-progress'
+  defaults:
+    _controller: '\Drupal\daily_progress_tracker\Controller\DailyProgressController::taskList'
+    _title: 'Daily Progress Tracker'
+  requirements:
+    _permission: 'access daily progress tracker'
+
+daily_progress_tracker.task_add:
+  path: '/admin/content/daily-progress/add'
+  defaults:
+    _form: '\Drupal\daily_progress_tracker\Form\TaskForm'
+    _title: 'Add New Task'
+  requirements:
+    _permission: 'access daily progress tracker'
+
+daily_progress_tracker.daily_checkin:
+  path: '/admin/content/daily-progress/{id}/checkin'
+  defaults:
+    _form: '\Drupal\daily_progress_tracker\Form\DailyCheckinForm'
+    _title: 'Daily Check-in'
+  requirements:
+    _permission: 'access daily progress tracker'
+    id: '\d+'
+
+daily_progress_tracker.task_edit:
+  path: '/admin/content/daily-progress/{id}/edit'
+  defaults:
+    _form: '\Drupal\daily_progress_tracker\Form\TaskForm'
+    _title: 'Edit Task'
+  requirements:
+    _permission: 'access daily progress tracker'
+    id: '\d+'
+
+daily_progress_tracker.task_delete:
+  path: '/admin/content/daily-progress/{id}/delete'
+  defaults:
+    _form: '\Drupal\daily_progress_tracker\Form\TaskDeleteForm'
+    _title: 'Delete Task'
+  requirements:
+    _permission: 'access daily progress tracker'
+    id: '\d+'

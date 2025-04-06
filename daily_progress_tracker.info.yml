@@ -1,0 +1,9 @@
+name: Daily Progress Tracker
+type: module
+description: 'Tracks daily progress on tasks with visual charts.'
+package: Custom
+core_version_requirement: ^9 || ^10
+version: 8.x-1.1
+dependencies:
+  - drupal:datetime
+  - drupal:views

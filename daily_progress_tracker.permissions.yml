@@ -1,0 +1,6 @@
+access daily progress tracker:
+  title: 'Access Daily Progress Tracker'
+  description: 'View and manage daily progress tracking tasks.'
+administer daily progress tracker:
+  title: 'Administer Daily Progress Tracker'
+  description: 'Configure settings for the Daily Progress Tracker module.'

@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for Daily Progress Tracker module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function daily_progress_tracker_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.daily_progress_tracker':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Daily Progress Tracker module allows you to create and monitor tasks with daily check-ins.') . '</p>';
+      
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Create tasks with start and end dates') . '</li>';
+      $output .= '<li>' . t('Track daily completion status') . '</li>';
+      $output .= '<li>' . t('Monitor progress over time') . '</li>';
+      $output .= '</ul>';
+      
+      return $output;
+  }
+}

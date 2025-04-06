@@ -1,0 +1,22 @@
+# Ignore Drupal core and vendor files
+/vendor/
+/core/
+
+# Ignore the sites/default/files folder (uploaded files and caches)
+sites/*/files/
+
+# Ignore configuration backup files
+sites/*/settings.local.php
+sites/*/services.yml
+
+# Ignore IDE and editor files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Ignore temporary files
+*.log
+*.sql
+*.tar.gz
+*.bak

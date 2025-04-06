@@ -1,0 +1,5 @@
+# Remove the chart-related libraries, keep only CSS if needed
+progress_tracker:
+  css:
+    theme:
+      css/daily_progress_tracker.css: {}

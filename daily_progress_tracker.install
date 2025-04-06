@@ -1,0 +1,222 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Daily Progress Tracker module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function daily_progress_tracker_schema() {
+  $schema['daily_progress_tasks'] = [
+    'description' => 'Stores task information for daily progress tracking.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary key: Unique task ID.',
+      ],
+      'title' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The title of the task.',
+      ],
+      'description' => [
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Detailed description of the task.',
+      ],
+      'start_date' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => 'Unix timestamp for when the task starts.',
+      ],
+      'end_date' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => 'Unix timestamp for when the task ends.',
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => 'Unix timestamp for when the task was created.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'date_range' => ['start_date', 'end_date'],
+    ],
+  ];
+
+  $schema['daily_progress_checkins'] = [
+    'description' => 'Stores daily check-in records.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary key: Unique check-in ID.',
+      ],
+      'task_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Foreign key to the daily_progress_tasks table.',
+      ],
+      'date' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'size' => 'big',
+        'description' => 'Unix timestamp for the check-in date.',
+      ],
+      'completed' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Whether the task was completed (1) or not (0).',
+      ],
+      'notes' => [
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Optional notes about the check-in.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'foreign keys' => [
+      'task' => [
+        'table' => 'daily_progress_tasks',
+        'columns' => ['task_id' => 'id'],
+        'on delete' => 'CASCADE',
+      ],
+    ],
+    'indexes' => [
+      'task_date' => ['task_id', 'date'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Adds foreign keys and indexes to existing tables.
+ */
+function daily_progress_tracker_update_8001() {
+  $schema = \Drupal::database()->schema();
+  $messenger = \Drupal::messenger();
+  
+  try {
+    // 1. Verify data integrity before adding foreign key - MySQL compatible version
+    $invalid_records = \Drupal::database()->query(
+      'SELECT c.id, c.task_id 
+       FROM {daily_progress_checkins} c 
+       LEFT JOIN {daily_progress_tasks} t ON t.id = c.task_id 
+       WHERE t.id IS NULL'
+    )->fetchAll();
+    
+    if (!empty($invalid_records)) {
+      $messenger->addWarning(
+        t('Found @count invalid check-in records that reference non-existent tasks. Please fix these before proceeding.', 
+        ['@count' => count($invalid_records)])
+      );
+      // Provide instructions to fix
+      $messenger->addWarning(
+        t('Run this SQL to identify orphaned records: <code>SELECT * FROM {daily_progress_checkins} WHERE task_id NOT IN (SELECT id FROM {daily_progress_tasks})</code>')
+      );
+      return;
+    }
+
+    // 2. Add foreign key if tables exist and relationship doesn't exist
+    if ($schema->tableExists('daily_progress_checkins') && 
+        $schema->tableExists('daily_progress_tasks')) {
+          
+      // MySQL specific foreign key addition
+      if (\Drupal::database()->driver() == 'mysql') {
+        \Drupal::database()->query(
+          'ALTER TABLE {daily_progress_checkins} 
+           ADD CONSTRAINT fk_task_id 
+           FOREIGN KEY (task_id) REFERENCES {daily_progress_tasks} (id) 
+           ON DELETE CASCADE'
+        );
+      }
+      else {
+        $schema->addForeignKey(
+          'daily_progress_checkins', 
+          'task', 
+          'daily_progress_tasks', 
+          ['task_id' => 'id'],
+          ['on delete' => 'CASCADE']
+        );
+      }
+      $messenger->addStatus(t('Added foreign key constraint for check-ins to tasks.'));
+    }
+
+    // 3. Add indexes if they don't exist - MySQL compatible method
+    $indexes = [
+      'daily_progress_tasks' => [
+        'date_range' => ['start_date', 'end_date']
+      ],
+      'daily_progress_checkins' => [
+        'task_date' => ['task_id', 'date']
+      ],
+    ];
+
+    foreach ($indexes as $table => $table_indexes) {
+      if ($schema->tableExists($table)) {
+        foreach ($table_indexes as $name => $columns) {
+          $column_list = implode(',', $columns);
+          if (\Drupal::database()->driver() == 'mysql') {
+            $index_exists = \Drupal::database()->query(
+              "SHOW INDEX FROM {$table} WHERE Key_name = :name",
+              [':name' => $name]
+            )->fetchField();
+            
+            if (!$index_exists) {
+              \Drupal::database()->query(
+                "ALTER TABLE {$table} ADD INDEX {$name} ({$column_list})"
+              );
+            }
+          }
+          elseif (!$schema->indexExists($table, $name)) {
+            $schema->addIndex($table, $name, $columns);
+          }
+        }
+      }
+    }
+
+    // 4. Update module schema version
+    \Drupal::keyValue('system.schema')->set('daily_progress_tracker', 8001);
+    
+    return t('Successfully updated database schema.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('daily_progress_tracker')->error('Update failed: @error', [
+      '@error' => $e->getMessage(),
+    ]);
+    return t('Database update failed: @error', ['@error' => $e->getMessage()]);
+  }
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function daily_progress_tracker_uninstall() {
+  $schema = \Drupal::database()->schema();
+  
+  // Remove tables if they exist
+  foreach (['daily_progress_checkins', 'daily_progress_tasks'] as $table) {
+    if ($schema->tableExists($table)) {
+      $schema->dropTable($table);
+    }
+  }
+  
+  // Clear caches
+  \Drupal::cache()->invalidateAll();
+}

@@ -1,0 +1,4 @@
+services:
+  daily_progress_tracker.chart_manager:
+    class: Drupal\daily_progress_tracker\Service\ChartManager
+    arguments: ['@database', '@date.formatter', '@cache.default']
