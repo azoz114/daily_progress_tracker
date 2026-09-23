@@ -40,3 +40,11 @@ daily_progress_tracker.task_delete:
   requirements:
     _permission: 'access daily progress tracker'
     id: '\d+'
+
+daily_progress_tracker.settings_form:
+  path: '/admin/config/services/daily-progress'
+  defaults:
+    _form: '\Drupal\daily_progress_tracker\Form\SettingsForm'
+    _title: 'Daily Progress Tracker Settings'
+  requirements:
+    _permission: 'administer site configuration'
