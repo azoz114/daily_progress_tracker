@@ -1,0 +1,5 @@
+daily_progress_tracker.settings_form:
+  title: 'Daily Progress Tracker'
+  description: 'Configure default settings for daily progress tracking.'
+  parent: system.admin_config_services
+  route_name: daily_progress_tracker.settings_form
